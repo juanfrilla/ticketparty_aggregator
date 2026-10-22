@@ -1,0 +1,3 @@
+streamlit>=1.50
+httpcloak==1.7.3
+beautifulsoup4>=4.12

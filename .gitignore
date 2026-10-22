@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+.frx-context/
+work/
+.streamlit/secrets.toml
