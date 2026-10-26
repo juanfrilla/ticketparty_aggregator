@@ -1,7 +1,13 @@
 streamlit>=1.50
 httpcloak==1.7.3
 beautifulsoup4>=4.12
-# captura del orden del canon con navegador real (opcional en la app:
-# solo se importa al pulsar el botón)
-selenium>=4.20
+# main.py importa dateutil.parser y dotenv de forma directa:
+# no son dependencias de streamlit, hay que declararlas o el deploy muere con
+# ModuleNotFoundError al importar main.
+python-dateutil>=2.8
+python-dotenv>=1.0
+
+# capture.py habla CDP por websocket y usa requests (la captura del orden
+# se ejecuta SOLO en local; en Cloud el orden se lee de data/canon.json)
 websocket-client>=1.7
+requests>=2.31
