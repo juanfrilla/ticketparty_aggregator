@@ -54,65 +54,6 @@ def locate(src):
     return line, col, params
 
 
-# class ReqClient:
-#     def __init__(self):
-#         self.session = requests.Session()
-
-#     def first_request(self):
-#         headers = {
-#             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-#             "accept-language": "es-ES,es;q=0.9,en;q=0.8",
-#             "cache-control": "no-cache",
-#             "priority": "u=0, i",
-#             "referer": "https://www.ticketswap.es/",
-#             "sec-ch-ua": '"Not:A-Brand";v="8", "Chromium";v="156", "Google Chrome";v="156"',
-#             "sec-ch-ua-mobile": "?0",
-#             "sec-ch-ua-platform": '"Windows"',
-#             "sec-fetch-dest": "document",
-#             "sec-fetch-mode": "navigate",
-#             "sec-fetch-site": "same-origin",
-#             "upgrade-insecure-requests": "1",
-#             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
-#         }
-
-#         response = self.session.get("https://www.ticketswap.es/", headers=headers)
-#         return response.text
-
-#     def fetch_source_requests(self, href):
-#         """Descarga el JS con requests. Devuelve (src, url) o (None, None)."""
-#         headers = {
-#             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-#             "accept-language": "es-ES,es;q=0.9,en;q=0.8",
-#             "cache-control": "no-cache",
-#             "priority": "u=0, i",
-#             "referer": "https://www.ticketswap.es/",
-#             "sec-ch-ua": '"Not:A-Brand";v="8", "Chromium";v="156", "Google Chrome";v="156"',
-#             "sec-ch-ua-mobile": "?0",
-#             "sec-ch-ua-platform": '"Windows"',
-#             "sec-fetch-dest": "document",
-#             "sec-fetch-mode": "navigate",
-#             "sec-fetch-site": "same-origin",
-#             "upgrade-insecure-requests": "1",
-#             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
-#         }
-#         url = f"{HOME}{href}"
-#         r = self.session.get(url, timeout=15, headers=headers)
-#         return r
-
-#     def retrieve_src_href(self):
-#         text = self.first_request()
-#         soup = BeautifulSoup(text, "html.parser")
-#         scripts = soup.select("script")
-#         for script in scripts:
-#             src = script.get("src")
-#             if src:
-#                 return src
-
-#     def tasks(self):
-#         src_href = self.retrieve_src_href()
-#         return self.fetch_source_requests(src_href)
-
-
 # --------------------------------------------------------------------- CDP
 class CDP:
     def __init__(self, ws_url):
@@ -159,7 +100,7 @@ def retrieve_v(src):
 # -------------------------------------------------------------------- main
 def run_capture(
     resp=None,
-    chrome_bin="google-chrome",
+    chrome_bin="chromium",
     xvfb=True,
     wait=8,
 ):
@@ -181,6 +122,8 @@ def run_capture(
         "--no-first-run",
         "--no-sandbox",
         "about:blank",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
     ]
     if xvfb and shutil.which("xvfb-run"):
         cmd = ["xvfb-run", "-a"] + cmd
