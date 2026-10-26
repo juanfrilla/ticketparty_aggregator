@@ -1,3 +1,7 @@
 streamlit>=1.50
 httpcloak==1.7.3
 beautifulsoup4>=4.12
+# captura del orden del canon con navegador real (opcional en la app:
+# solo se importa al pulsar el botón)
+selenium>=4.20
+websocket-client>=1.7

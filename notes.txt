@@ -1,0 +1,7 @@
+sacar todos los djs que van
+cartel 
+link para comprar entradas 
+fecha y hora quizas
+
+
+logica, hacer una peticion, a ver el build id, si es el mismo, que tengo descargado, tirar de ese, que no, hago el proceso nuevo

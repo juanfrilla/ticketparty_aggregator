@@ -1,0 +1,6 @@
+do you know what is remember music?
+well, i that's named in spain to electronic music from 90-2000,  it are mostly played dance, trance and makina
+i did this project to discover new parties
+As a fan of music, i like to research new artists and genres, i used to go to madrid sometimes to remember parties, fabrik or ifema
+That's why i did this project that scrapes multiple websites that sell tickets in order to check when there are good remember parties to go
+Note: There is a vm reversed (my beloved vms) inside

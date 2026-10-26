@@ -4,3 +4,4 @@ __pycache__/
 .frx-context/
 work/
 .streamlit/secrets.toml
+/data

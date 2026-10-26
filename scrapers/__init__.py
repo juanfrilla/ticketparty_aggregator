@@ -1,6 +1,6 @@
 """Scrapers disponibles para la app. Cada módulo expone `scrape(query, **kw)`."""
 
-from . import ticketswap  # noqa: F401
+from .ticketswap import ticketswap  # noqa: F401
 
 REGISTRY = {
     "TicketSwap": ticketswap,
