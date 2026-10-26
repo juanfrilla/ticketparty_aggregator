@@ -4,4 +4,4 @@ link para comprar entradas
 fecha y hora quizas
 
 
-logica, hacer una peticion, a ver el build id, si es el mismo, que tengo descargado, tirar de ese, que no, hago el proceso nuevo
+si aparecen en varias búsquedas, ir aumentando la lista de djs

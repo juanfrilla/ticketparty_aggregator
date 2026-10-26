@@ -298,7 +298,7 @@ class TicketSwapScraper:
                         "end_date": node.get("endDate"),
                         "club": node.get("locationName"),
                         "city_name": node.get("cityName"),
-                        "url": node.get("url"),
+                        "url": node.get("uri", {}).get("url"),
                     }
                 )
             return scraped_data
