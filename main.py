@@ -156,13 +156,14 @@ with st.spinner("Buscando eventos y fiestas..."):
 
         with st.container(border=True):
             nombre_evento = event.get("name", "Evento sin nombre")
+            artista = event.get("artist", "Evento sin nombre")
             st.subheader(f"{nombre_evento} 🆕" if is_new else nombre_evento)
 
             col_info, col_button = st.columns([4, 1.5])
 
             # Información detallada adaptada a los campos de tu scrape()
             with col_info:
-                st.write(f"🎧 **Artista / Evento:** {nombre_evento}")
+                st.write(f"🎧 ** Artista:** {artista}")
                 st.write(
                     f"📍 **Club:** {event.get('club', 'N/A')} ({event.get('city_name', 'N/A')})"
                 )
@@ -179,7 +180,7 @@ with st.spinner("Buscando eventos y fiestas..."):
             # Botón de compra / enlace directo
             with col_button:
                 st.markdown("<br>", unsafe_allow_html=True)
-                ticket_url = event.get("url", "#")
+                ticket_url = event.get("event_url", "#")
                 st.markdown(
                     f"""<a href="{ticket_url}" target="_blank">
                         <button style="width:100%; border-radius:5px; background-color:#FF4B4B; color:white; border:none; padding:12px; font-weight:bold; cursor:pointer;">

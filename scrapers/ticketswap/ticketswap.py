@@ -11,7 +11,7 @@ from pathlib import Path
 import httpcloak
 from bs4 import BeautifulSoup
 
-from constants import CANON_FILE
+from constants import ARTISTS, CANON_FILE
 from utils import read_json, save_json
 
 from .capture import capture_order
@@ -103,7 +103,6 @@ class TicketSwapScraper:
         path,
     ):
 
-        # 2. Los campos (eliminamos 'b' porque ya no se usa en esta firma)
         fields = {
             "path": path,
             "tsDiff": str(ts_diff),
@@ -257,48 +256,57 @@ class TicketSwapScraper:
 
     def scrape(self):
         scraped_data = []
-        resp = self.first_request()
-        stds = self.retrieve_stds(resp.text)
-        if stds:
-            raw_server_ts, dynamic_secret = stds.split(".", 1)
-            server_ts = int(raw_server_ts)
-            build_id = self.retrieve_v(resp.text)
-            canon_order = self.retrieve_canon_from_json(build_id)
-            if not canon_order:
-                print("Not canon order, using browser to get it")
-                src_href = self.retrieve_src_href()
-                jsvmp_src_resp = self.fetch_jsvmp_request(src_href)
-                canon_order = capture_order(jsvmp_src_resp)
-                save_json(CANON_FILE, {build_id: canon_order})
-            print("Already have canon order, proceeding")
-            nonce = os.urandom(16).hex()
-            json_data = self.load_body("dj marta")
-            body = json.dumps(json_data, separators=(",", ":"))
-            attest = self.build_attestation(
-                canon_order,
-                nonce,
-                dynamic_secret,
-                server_ts,
-                build_id,
-                "POST",
-                GQL_PATH,
-                GQL_QUERY,
-                body,
-            )
-
-            resp = self.retrieve_data(attest, nonce, body)
-            data = resp.json()
-            events = data[0].get("data", {}).get("search", {}).get("edges", [])
-            for event in events:
-                node = event.get("node")
-                scraped_data.append(
-                    {
-                        "name": node.get("name"),
-                        "start_date": node.get("startDate"),
-                        "end_date": node.get("endDate"),
-                        "club": node.get("locationName"),
-                        "city_name": node.get("cityName"),
-                        "url": node.get("uri", {}).get("url"),
-                    }
+        for artist in ARTISTS:
+            print(f"Scraping {artist}")
+            resp = self.first_request()
+            stds = self.retrieve_stds(resp.text)
+            if stds:
+                raw_server_ts, dynamic_secret = stds.split(".", 1)
+                server_ts = int(raw_server_ts)
+                build_id = self.retrieve_v(resp.text)
+                canon_order = self.retrieve_canon_from_json(build_id)
+                if not canon_order:
+                    print("Not canon order, using browser to get it")
+                    src_href = self.retrieve_src_href()
+                    jsvmp_src_resp = self.fetch_jsvmp_request(src_href)
+                    canon_order = capture_order(jsvmp_src_resp)
+                    save_json(CANON_FILE, {build_id: canon_order})
+                print("Already have canon order, proceeding")
+                nonce = os.urandom(16).hex()
+                json_data = self.load_body(artist)
+                body = json.dumps(json_data, separators=(",", ":"))
+                attest = self.build_attestation(
+                    canon_order,
+                    nonce,
+                    dynamic_secret,
+                    server_ts,
+                    build_id,
+                    "POST",
+                    GQL_PATH,
+                    GQL_QUERY,
+                    body,
                 )
-            return scraped_data
+
+                resp = self.retrieve_data(attest, nonce, body)
+                data = resp.json()
+                events = data[0].get("data", {}).get("search", {}).get("edges", [])
+                for event in events:
+                    node = event.get("node")
+                    if node.get("__typename") == "ArtistResult":
+                        continue
+                    if node.get("country", {}).get("slug") != "spain":
+                        continue
+                    # if artist not in node.get("name").lower():
+                    #     continue
+                    scraped_data.append(
+                        {
+                            "name": node.get("name"),
+                            "artist": artist,
+                            "start_date": node.get("startDate"),
+                            "end_date": node.get("endDate"),
+                            "club": node.get("locationName"),
+                            "city_name": node.get("cityName"),
+                            "event_url": node.get("uri", {}).get("url"),
+                        }
+                    )
+        return scraped_data

@@ -5,3 +5,13 @@ fecha y hora quizas
 
 
 si aparecen en varias búsquedas, ir aumentando la lista de djs
+
+poner imagen, arreglar lo del nombre del artista en el titulo, makineros no me lo coge
+
+scrapear fever.com, 
+https://technobeatscloud.com/
+https://www.ticketswap.es/
+https://www.enterticket.es/
+tomaticket.com
+https://xceed.me/es/a
+https://es.ra.co/dj/djmarta/tour-dates
