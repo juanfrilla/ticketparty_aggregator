@@ -44,6 +44,47 @@ def free_port():
     return port
 GQL_PATH = "/api/graphql/public"
 
+# --------------------------------------------------- binario de navegador
+# Chromium es el navegador de referencia en LOS DOS sitios: en Streamlit Cloud
+# se instala con `chromium` en packages.txt (apt de Debian) y en local es el
+# snap. Chrome queda solo como respaldo. Se resuelve en runtime para que el
+# mismo codigo funcione en los dos entornos. Override: CHROME_BIN=/ruta/chrome
+CHROME_CANDIDATES = (
+    os.environ.get("CHROME_BIN") or "",
+    "chromium",
+    "chromium-browser",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/snap/bin/chromium",
+    "google-chrome",
+    "google-chrome-stable",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+)
+
+
+def find_chrome(quiet=False):
+    """Primer navegador Chromium-like disponible. Cachea el resultado."""
+    global _CHROME
+    if _CHROME is not None:
+        return _CHROME
+    for cand in CHROME_CANDIDATES:
+        if not cand:
+            continue
+        path = cand if os.path.isabs(cand) else shutil.which(cand)
+        if path and os.path.exists(path):
+            _CHROME = path
+            if not quiet:
+                print(f"[capture] navegador: {path}")
+            return path
+    raise RuntimeError(
+        "no hay Chromium. En local: sudo snap install chromium (o apt install chromium); "
+        "en Cloud: anade `chromium` a packages.txt"
+    )
+
+
+_CHROME = None
+
 # campos conocidos del canon (el orden se deduce del texto, no de aqui)
 CAMPOS = ("fingerprint", "path", "tsDiff", "clientTs", "body", "method",
           "buildId", "query", "nonce", "b", "cv")
@@ -151,9 +192,10 @@ def pick_canon(canons, want_path=GQL_PATH):
 
 
 # -------------------------------------------------------------------- main
-def run_capture(chrome_bin="google-chrome", wait=30, headless=True, url=HOME,
+def run_capture(chrome_bin=None, wait=30, headless=True, url=HOME,
                 trigger=True, chrome_extra=None):
     global PORT
+    chrome_bin = chrome_bin or find_chrome()
     PORT = free_port()
     profile = tempfile.mkdtemp(prefix="prof_")
     cmd = [chrome_bin, f"--remote-debugging-port={PORT}", f"--user-data-dir={profile}",
@@ -243,7 +285,7 @@ def capture_order(src_resp=None, build_id=None, headless=True, wait=30):
     return order
 
 
-def run_next_build(wait=25, chrome_bin="google-chrome", headless=True, url=HOME):
+def run_next_build(wait=25, chrome_bin=None, headless=True, url=HOME):
     """Captura el buildId de NEXT (40 hex) leyendo __NEXT_DATA__ con un Chrome real.
 
     Es OTRA cosa que el build del SDK del WAAP (812268256ae0c455). El de Next es
@@ -253,6 +295,7 @@ def run_next_build(wait=25, chrome_bin="google-chrome", headless=True, url=HOME)
     sin HTML de Next). Devuelve None si no lo consigue.
     """
     global PORT
+    chrome_bin = chrome_bin or find_chrome()
     PORT = free_port()
     profile = tempfile.mkdtemp(prefix="prof_")
     cmd = [chrome_bin, f"--remote-debugging-port={PORT}", f"--user-data-dir={profile}",

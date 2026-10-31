@@ -1,2 +1,2 @@
-google-chrome-stable
-xvfb
+chromium
+fonts-liberation
