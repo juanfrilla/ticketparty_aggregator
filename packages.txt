@@ -1,2 +1,2 @@
-google-chrome
+google-chrome-stable
 xvfb
