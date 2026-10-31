@@ -35,19 +35,15 @@ def run_single_scraper(ScraperClass):
     scraper_name = getattr(scraper, "scraper_name", type(scraper).__name__)
     # logger = get_logger(scraper_name)
 
-    try:
-        print(f"Starting scraping {scraper_name}")
-        events = scraper.scrape()
+    print(f"Starting scraping {scraper_name}")
+    events = scraper.scrape()
 
-        # Verificamos que devuelva una lista
-        if not isinstance(events, list):
-            events = []
+    # Verificamos que devuelva una lista
+    if not isinstance(events, list):
+        events = []
 
-        print(f"Retrieved {len(events)} events for {scraper_name}")
-        return events
-    except Exception as e:
-        print(f"Error in {scraper_name}: {e!s}")
-        return []
+    print(f"Retrieved {len(events)} events for {scraper_name}")
+    return events
 
 
 def scrape_everything_parallel():
@@ -159,7 +155,13 @@ with st.spinner("Buscando eventos y fiestas..."):
             artista = event.get("artist", "Evento sin nombre")
             st.subheader(f"{nombre_evento} 🆕" if is_new else nombre_evento)
 
-            col_info, col_button = st.columns([4, 1.5])
+            image_url = event.get("image_url")
+            if image_url:
+                col_thumb, col_info, col_button = st.columns([1.2, 3.6, 1.5])
+                with col_thumb:
+                    st.image(image_url, width=150)
+            else:
+                col_info, col_button = st.columns([4, 1.5])
 
             # Información detallada adaptada a los campos de tu scrape()
             with col_info:

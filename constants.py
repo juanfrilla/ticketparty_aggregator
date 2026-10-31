@@ -1,6 +1,7 @@
 DATA_FILE = "./data/events.json"
 LAST_SCRAPED_FILE = "./data/last_scraped.json"
 CANON_FILE = "./data/canon.json"
+NEXT_BUILD_FILE = "./data/next_build.json"
 ARTISTS = [
     "abel ramos",
     "christian millan",
