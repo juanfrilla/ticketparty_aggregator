@@ -9,11 +9,10 @@ from dotenv import load_dotenv
 
 # Asegúrate de que estos módulos existan en tu estructura (o adáptalos a tus rutas)
 from constants import DATA_FILE
+from scrapers.technobeatsclub import TechnoBeatsClubScraper
 
 # --- IMPORTA TU SCRAPER AQUÍ ---
-from scrapers.ticketswap.ticketswap import (
-    TicketSwapScraper,  # (O la ruta donde esté tu clase)
-)
+# from scrapers.ticketswap.ticketswap import TicketSwapScraper
 from utils import (
     last_scraped_today,
     read_json,
@@ -50,9 +49,8 @@ def scrape_everything_parallel():
     """Ejecuta todos los scrapers de forma concurrente con ThreadPoolExecutor"""
 
     # Añade aquí todas las clases de tus scrapers
-    scrapers = [
-        TicketSwapScraper,
-        # OtroScraper,
+    scrapers = [  # TicketSwapScraper,
+        TechnoBeatsClubScraper
     ]
 
     if not scrapers:

@@ -17,4 +17,5 @@ ARTISTS = [
     "miguel serna",
     "pastis & buenri",
     "raul ortiz",
+    "vicente belenguer",
 ]

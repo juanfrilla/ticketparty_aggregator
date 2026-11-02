@@ -589,71 +589,6 @@ class TicketSwapScraper:
                 "edges"
             ) or []
 
-            # artist_ids = {}
-            # # avatar publico del artista: la busqueda ya lo trae y sirve de
-            # # respaldo real cuando el evento no tiene portada (p.ej. abel ramos)
-            # artist_avatars = {}
-            # slug de su pagina: /artist/<slug> -> de ahi sale el JSON de Next
-            # artist_slugs = {}
-            # for edge in edges:
-            #     node = edge.get("node") or {}
-            #     if node.get("__typename") == "ArtistResult" and node.get("id"):
-            #         artist_ids[self.normalize_name(node.get("name"))] = node["id"]
-            #         slug = slug_from_uri(
-            #             (node.get("uri") or {}).get("path")
-            #             or (node.get("uri") or {}).get("url")
-            #         )
-            #         if slug:
-            #             artist_slugs[self.normalize_name(node.get("name"))] = slug
-            #         if node.get("avatar"):
-            #             artist_avatars[node["id"]] = node["avatar"]
-
-            # artist_slug = self.pick_artist_id(artist_slugs, artist)
-
-            # --- 2a) PAGINA del artista: /_next/data/<build>/es-ES/artist/<slug>.json
-            # Trae avatarUrl + activeEvents[].imageUrl sin tocar GraphQL. Es la
-            # fuente preferente; el lote queda como respaldo.
-            # page_images = {}
-            # if artist_slug and page is not None:
-            #     pageprops = page.fetch_artist(artist_slug)
-            #     if pageprops:
-            #         page_images, page_avatar = images_from_pageprops(pageprops)
-            #         if page_avatar and global_id and global_id not in artist_avatars:
-            #             artist_avatars[global_id] = page_avatar
-            #         print(
-            #             f"[{artist}] pagina: {len(page_images)} eventos con imagen"
-            #             f" · avatar={'si' if page_avatar else 'no'}"
-            #         )
-            #     else:
-            #         print(f"[{artist}] pagina del artista no disponible -> GraphQL")
-
-            # --- 2b) lote GraphQL (respaldo y eventos que la pagina no liste)
-            # images = {}
-            # if global_id:
-            #     ev_resp = self.event_information_request(
-            #         canon_order, dynamic_secret, server_ts, build_id, global_id
-            #     )
-            #     if ev_resp.status_code == 200:
-            #         ops = [
-            #             op["operationName"] for op in self.load_event_body(global_id)
-            #         ]
-            #         images = self.image_index(ev_resp.json(), ops)
-            #     else:
-            #         print(f"[{artist}] lote de imagenes -> {ev_resp.status_code}")
-            # else:
-            #     print(f"[{artist}] sin id global de artista")
-            # # la pagina manda: si las dos traen el evento, gana la pagina
-            # images = {**images, **page_images}
-            # # [garantia] Solo URLs de la busqueda de ESTE artista: aunque un bloque
-            # # del lote traiga activeEvents de otro artista (o si se llamase a
-            # # image_index sin `ops`), no puede colarse una imagen ajena.
-            # own_urls = {
-            #     ((e.get("node") or {}).get("uri") or {}).get("url")
-            #     for e in edges
-            #     if (e.get("node") or {}).get("__typename") != "ArtistResult"
-            # }
-            # images = {u: v for u, v in images.items() if u in own_urls}
-
             # --- 3) filas
             for edge in edges:
                 node = edge.get("node") or {}
@@ -692,39 +627,7 @@ class TicketSwapScraper:
                         "city_name": node.get("cityName"),
                         "event_url": event_url,
                         "image_url": image_url,
-                        # "image_small_url": image_small_url,
-                        # "image_source": image_source,
+                        "origin": "www.ticketswap.com",
                     }
                 )
         return scraped_data
-
-
-# TODO e de cristian varela, dificil sacar la imagen
-# TODO mirar la apk a ver si sale la imagen ahi
-
-
-# import requests
-
-# burp0_url = "https://www.ticketswap.es:443/_next/data/9755219a57713af6b70ea603af7ce7ee10a77302/es-ES/event/face-off-abel-ramos-y-cristian-varela-pinto-sala-groove-2026-12-07-CfGnwGWqMALA61gCheDM3/new.json?categoryTickets=concert-tickets&eventSlug=face-off-abel-ramos-y-cristian-varela-pinto-sala-groove-2026-12-07-CfGnwGWqMALA61gCheDM3"
-
-# burp0_headers = {
-#     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0",
-#     "Accept": "*/*",
-#     "Accept-Language": "es-ES,es;q=0.9,en-US;q=0.8,en;q=0.7",
-#     "Accept-Encoding": "gzip, deflate, br",
-#     "Referer": "https://www.ticketswap.es/artist/abel-ramos-tickets-4o1KJMK9ECggdbuFZVrYMG",
-#     "Baggage": "sentry-environment=production,sentry-release=9755219a57713af6b70ea603af7ce7ee10a77302,sentry-public_key=614c6d8e7a8248408b0c226150d9e239,sentry-trace_id=bb4e3710e75547efbfb4d1ebd902cf5d,sentry-org_id=11994,sentry-transaction=%2F%5B...alias%5D,sentry-sampled=false,sentry-sample_rand=0.7441346765857434,sentry-sample_rate=0",
-#     "Sentry-Trace": "bb4e3710e75547efbfb4d1ebd902cf5d-a654f16507e429a8-0",
-#     "Web-Attest": "eyJ2IjoxLCJzZXJ2ZXJUcyI6MTc5MzQzNzQxNDU2MywiY2xpZW50VHMiOjE3OTM0Mzg0MTQxODIsInRzRGlmZiI6MjgsImZwIjoiKzlQVHZkTVBkWjRncytJOVpzdEZweGljaTUySzNGZjhVWWNsb2h0SmpEU0JmZmtNZ1A5ckt5blJtbVJPWHRhenpnL09ueDd4Tm0yUlFhdVZaZUNUWEpSQy9aeWlkbEthaFVFS0JOa0U5K24vazdnSEk4QUhYU3pWcUp5aCtZQzRLM2ZqREthWGV6WEZzQVFXZEt0RGdSeVQ4U3FDY2JmbWo0OU5oQ2hMdGo3VEVuL0F1UEczektvZmNNTHY0UVR1NWhhcjBSZjhHYnN5blFUZDhJQUR2WGtIK3c3eisxRlVqTUVEU3lOSFdwWkdGMi9jbzYzalJpb0ZqYTZrQzQyeTRpVTdVMDhGNzkvWUE1dlJ0a3VjMHdZd1g5Sm5YSENEelBwb1hIYTh5Q1FINGoxUXE1aVVLSldKZ1ZvVkVWMThOc3hLSWVZY2h5TStaZWx2UzNoWXVIUE5yOGo4STQvSG5Qd0p6RFlTYzhSa1J4QVV4Q3pRN3ZZZm04VUN3SGdEbW5SdjVhd29DbFkvenRPRnBJN0V0V0NKQXI5VnVBZWI0djliSzVWREtvM2s4aFArNjFLWFIwaFRobm91M2NCK3V2ak5qQ2padVFIQldyM3dWTE9YM2VERjBLdTNvVCtiY0xKb3NNbDhwdStEUUpKVHhwVEc0bW50MTA3dnF0WDRvTVo0d2pDaDUwQWYiLCJzaWciOiJpRzBsaU1SSkFIZFVxdzdRcThHd0V1U244V3AxakpxKzV5SEV4UDUzRVRvPSIsImJ1aWxkSWQiOiJmZDg4YTYwMGVlZWI5Y2Y2IiwiYiI6WzEzMzUsNjg0LDE5NDA4LDI5LDE1NiwyLDEyLDY4LDQ4MSwxMCw3MiwzLDAsMCwxMCwxMCwwLDRdfQ==",
-#     "Web-Request-Id": "1c292725f1e4f25dc52c9f6890b7bef1",
-#     "X-Nextjs-Data": "1",
-#     "Sec-Fetch-Dest": "empty",
-#     "Sec-Fetch-Mode": "cors",
-#     "Sec-Fetch-Site": "same-origin",
-#     "Priority": "u=4",
-#     "Te": "trailers",
-# }
-# requests.get(burp0_url, headers=burp0_headers, cookies=burp0_cookies)
-
-
-# work/test_next_request_200.py
