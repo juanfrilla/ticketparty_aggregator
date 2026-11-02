@@ -9,7 +9,9 @@ from dotenv import load_dotenv
 
 # Asegúrate de que estos módulos existan en tu estructura (o adáptalos a tus rutas)
 from constants import DATA_FILE
-from scrapers.technobeatsclub import TechnoBeatsClubScraper
+
+# from scrapers.technobeatsclub import TechnoBeatsClubScraper
+from scrapers.enterticket import EnterTicketScraper
 
 # --- IMPORTA TU SCRAPER AQUÍ ---
 # from scrapers.ticketswap.ticketswap import TicketSwapScraper
@@ -50,7 +52,8 @@ def scrape_everything_parallel():
 
     # Añade aquí todas las clases de tus scrapers
     scrapers = [  # TicketSwapScraper,
-        TechnoBeatsClubScraper
+        # TechnoBeatsClubScraper
+        EnterTicketScraper
     ]
 
     if not scrapers:
