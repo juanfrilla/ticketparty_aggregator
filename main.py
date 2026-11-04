@@ -27,6 +27,14 @@ load_dotenv()
 st.set_page_config(page_title="TicketParty Aggregator", page_icon="🎉", layout="wide")
 
 
+def parse_date(date_str):
+    dt = datetime.fromisoformat(date_str)
+    # Si la fecha tiene zona horaria, la convertimos a UTC y le quitamos la info de zona horaria
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(UTC).replace(tzinfo=None)
+    return dt
+
+
 def run_single_scraper(ScraperClass):
     """Función auxiliar para ejecutar un solo scraper de forma segura"""
     scraper = ScraperClass()
@@ -133,16 +141,20 @@ with st.spinner("Buscando eventos y fiestas..."):
     if not filtered_events:
         st.info("No hay eventos que coincidan con los filtros seleccionados.")
 
-    for event in filtered_events:
+    ordered_events = sorted(filtered_events, key=lambda x: parse_date(x["start_date"]))
+
+    for event in ordered_events:
         raw_date = event.get("start_date")
-        is_new = False
         formatted_date = "Fecha por confirmar"
 
         if raw_date:
             try:
                 posted_dt = isoparse(raw_date)
                 now = datetime.now(UTC)
-                is_new = (now - posted_dt).days < 3
+
+                if posted_dt <= now:
+                    continue
+
                 formatted_date = posted_dt.strftime("%d/%m/%Y - %H:%M")
             except Exception:
                 formatted_date = str(raw_date)
@@ -150,7 +162,7 @@ with st.spinner("Buscando eventos y fiestas..."):
         with st.container(border=True):
             nombre_evento = event.get("name", "Evento sin nombre")
             artista = event.get("artist", "Evento sin nombre")
-            st.subheader(f"{nombre_evento} 🆕" if is_new else nombre_evento)
+            st.subheader(nombre_evento)
 
             image_url = event.get("image_url")
             if image_url:
@@ -166,6 +178,7 @@ with st.spinner("Buscando eventos y fiestas..."):
                 st.write(
                     f"📍 **Club:** {event.get('club', 'N/A')} ({event.get('city_name', 'N/A')})"
                 )
+                st.write(f"🌐 **Origen:** {event.get('origin', 'N/A')}")
                 st.write(f"📅 **Inicio:** {formatted_date}")
 
                 end_date = event.get("end_date")

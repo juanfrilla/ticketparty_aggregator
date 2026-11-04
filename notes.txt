@@ -10,7 +10,6 @@ poner imagen, arreglar lo del nombre del artista en el titulo, makineros no me l
 
 scrapear 
 https://feverup.com/
-https://www.enterticket.es/
 tomaticket.com
 https://xceed.me/es/a
 https://es.ra.co/dj/djmarta/tour-dates
@@ -18,3 +17,7 @@ https://es.ra.co/dj/djmarta/tour-dates
 ordenar por fecha y hora
 
 Eventos antiguos, descartar
+
+Sacar djs que pinchan en eventos, clasificar por djs
+No duplicar Eventos
+Detectar que es el mismo evento y quizás poner dos webs que venden entradas
