@@ -313,6 +313,84 @@ class TicketSwapScraper:
             return match.group(1)
         return ""
 
+    # ---------------------------------------------------------------
+    # Descubrimiento del buildId VIVO de Next (el de /_next/data/<id>/...)
+    #
+    # Ojo: hay TRES ids y solo uno sirve para esa ruta.
+    #   * `release` del chunk del CDN (32fu4d8md-_kv.js) -> NO: el chunk es
+    #     estatico y el CDN lo cachea, su release se queda viejo y
+    #     /_next/data responde 404 (pageProps.statusCode = 404).
+    #   * buildId del SDK WAAP (waap-webattest-js?v=...)  -> NO, es otro id.
+    #   * buildId de Next (40 hex)                        -> SI.
+    #
+    # Via verificada, sin navegador y sin attest: se pide una ruta que acabe
+    # en extension de fichero (.js/.txt/.ico); el WAAP no la intercepta y
+    # Next devuelve su pagina 404 completa, que lleva
+    #     "buildId":"<40 hex>"  y  "assetPrefix":"https://ticketswap-image-cdn..."
+    # Cualquier 404 sirve (/sw.js, /probe-buildid.js, /api/version). Con el
+    # id y el assetPrefix se abre ademas el mapa rutas->chunks:
+    #     <assetPrefix>/_next/static/<buildId>/_buildManifest.js
+    # ---------------------------------------------------------------
+    NEXT_BUILD_PROBES = (
+        "/sw.js",
+        "/probe-buildid.js",
+        "/api/version",
+        "/robots-nx.txt",
+        "/x.ico",
+    )
+
+    @staticmethod
+    def parse_build_id(text: str):
+        if not text:
+            return ""
+        for pat in (
+            r'"buildId":"([0-9a-f]{40})"',
+            r"/_next/static/([0-9a-f]{40})/_buildManifest\.js",
+            r"/_next/static/([0-9a-f]{40})/",
+        ):
+            match = re.search(pat, text)
+            if match:
+                return match.group(1)
+        return ""
+
+    @staticmethod
+    def parse_asset_prefix(text: str):
+        if not text:
+            return ""
+        match = re.search(r'"assetPrefix":"([^"]+)"', text)
+        if match and match.group(1).startswith("http"):
+            return match.group(1).rstrip("/")
+        return ""
+
+    def next_build_id(self, device_id=None):
+        """buildId vivo de Next, sin navegador ni Web-Attest."""
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "es-ES,es;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+        }
+        if device_id:
+            headers["Cookie"] = f"device_id={device_id}"
+
+        for path in self.NEXT_BUILD_PROBES:
+            try:
+                resp = self.session.get(
+                    "https://www.ticketswap.es" + path, headers=headers
+                )
+            except Exception:
+                continue
+            body = getattr(resp, "text", "") or ""
+            build_id = self.parse_build_id(body)
+            if build_id:
+                self.next_asset_prefix = self.parse_asset_prefix(body)
+                print(f"[next] buildId vivo: {build_id} (~{path})")
+                return build_id
+
+        print("[next] AVISO: no pude descubrir el buildId de Next")
+        return ""
+
     def retrieve_second_build_id_src(self):
 
         burp0_url = "https://ticketswap-image-cdn.b-cdn.net:443/_next/static/chunks/32fu4d8md-_kv.js"
@@ -438,7 +516,8 @@ class TicketSwapScraper:
         prefix = category_prefix or prefix or "club-tickets"
 
         resp = None
-        for _ in range(3):
+        payload = {}
+        for _ in range(4):
             resp = self._next_data_request(
                 canon_order,
                 dyn,
@@ -449,15 +528,31 @@ class TicketSwapScraper:
                 server_ts,
                 device_id,
             )
-            if resp.status_code == 304:  # copia cacheada sin cuerpo: reintentar
+            code = getattr(resp, "status_code", 0)
+            if code == 304:  # copia cacheada sin cuerpo: reintentar
                 continue
-            if resp.status_code == 200:
-                real_prefix = self.soft_redirect(resp)
-                if real_prefix and real_prefix != prefix:
-                    prefix = real_prefix  # el __N_REDIRECT dicta la categoria
+            try:
+                payload = resp.json() if resp.content else {}
+            except Exception:
+                payload = {}
+            page_props = (payload or {}).get("pageProps") or {}
+            # 404 (HTTP 404 o el interno de Next) = second_build_id
+            # desfasado. Se redescubre el vivo, sin navegador, y se reintenta.
+            if code == 404 or page_props.get("statusCode") == 404:
+                fresh = self.next_build_id(device_id)
+                if fresh and fresh != second_build_id:
+                    second_build_id = fresh
                     continue
-            break
-        return resp.json()
+                print("[next] 404 y no pude refrescar el buildId de Next")
+                return {}
+            if code != 200:
+                return {}
+            real_prefix = self.soft_redirect(resp)
+            if real_prefix and real_prefix != prefix:
+                prefix = real_prefix  # el __N_REDIRECT dicta la categoria
+                continue
+            return payload
+        return payload
 
     def event_information_request(
         self, canon_order, dyn, server_ts, build_id, artist_id
@@ -563,8 +658,7 @@ class TicketSwapScraper:
             save_json(CANON_FILE, {build_id: canon_order})
         print("Already have canon order, proceeding")
         resp = self.retrieve_second_build_id_src()
-        src = resp.text
-        second_build_id = self.parse_release(src)
+        second_build_id = self.next_build_id()
         for artist in ARTISTS:
             print(f"Scraping {artist}")
             # --- 1) búsqueda: eventos + id global del artista
