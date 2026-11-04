@@ -14,6 +14,8 @@ from scrapers.technobeatsclub import TechnoBeatsClubScraper
 
 # --- IMPORTA TU SCRAPER AQUÍ ---
 from scrapers.ticketswap.ticketswap import TicketSwapScraper
+
+# --- IMPORTA TU SCRAPER AQUÍ ---
 from utils import (
     last_scraped_today,
     read_json,
@@ -29,10 +31,8 @@ st.set_page_config(page_title="TicketParty Aggregator", page_icon="🎉", layout
 
 def parse_date(date_str):
     dt = datetime.fromisoformat(date_str)
-    # Si la fecha tiene zona horaria, la convertimos a UTC y le quitamos la info de zona horaria
-    if dt.tzinfo is not None:
-        dt = dt.astimezone(UTC).replace(tzinfo=None)
-    return dt
+    # Forzamos siempre la conversión a UTC y eliminamos el tzinfo de forma incondicional
+    return dt.astimezone(UTC).replace(tzinfo=None)
 
 
 def run_single_scraper(ScraperClass):
@@ -58,7 +58,7 @@ def scrape_everything_parallel():
     """Ejecuta todos los scrapers de forma concurrente con ThreadPoolExecutor"""
 
     # Añade aquí todas las clases de tus scrapers
-    scrapers = [TicketSwapScraper, TechnoBeatsClubScraper, EnterTicketScraper]
+    scrapers = [EnterTicketScraper, TechnoBeatsClubScraper, TicketSwapScraper]
 
     if not scrapers:
         return []
@@ -123,12 +123,13 @@ with st.spinner("Buscando eventos y fiestas..."):
     )
     selected_club = st.sidebar.selectbox("Club / Local", ["All"] + clubs)
 
+    now = datetime.now(UTC).replace(tzinfo=None)
     filtered_events = [
         e
         for e in events_after_city
-        if selected_club == "All" or e.get("club") == selected_club
+        if (selected_club == "All" or e.get("club") == selected_club)
+        and parse_date(e["start_date"]) > now
     ]
-
     # --- TÍTULO PRINCIPAL ---
     st.title(f"🎉 TicketParty Aggregator ({len(filtered_events)} eventos encontrados)")
 
@@ -150,10 +151,6 @@ with st.spinner("Buscando eventos y fiestas..."):
         if raw_date:
             try:
                 posted_dt = isoparse(raw_date)
-                now = datetime.now(UTC)
-
-                if posted_dt <= now:
-                    continue
 
                 formatted_date = posted_dt.strftime("%d/%m/%Y - %H:%M")
             except Exception:

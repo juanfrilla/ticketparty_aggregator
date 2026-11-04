@@ -79,7 +79,7 @@ class EnterTicketScraper:
                                 "start_date": event.get("start_date", {}).get("date"),
                                 "end_date": event.get("end_date", {}).get("date"),
                                 "club": venue.get("name"),
-                                "city_name": venue.get("province"),
+                                "city_name": venue.get("address", {}).get("province"),
                                 "event_url": f"https://www.enterticket.es/eventos/{slug}",
                                 "image_url": f"https://d31tcnbxvxtafg.cloudfront.net/images/events/{header_image}",
                                 "origin": "https://www.enterticket.es/",
