@@ -64,7 +64,10 @@ class EnterTicketScraper:
                     artist_slug = artists[0].get("slug")
                 else:
                     for artist_data in artists:
-                        if "dj" in artist_data.get("slug"):
+                        if (
+                            "dj" in artist_data.get("slug")
+                            or artist_data.get("slug") == artist
+                        ):
                             artist_id = artist_data.get("id")
                 if not artist_id:
                     raise Exception(f"Artist id not found for {artist}")

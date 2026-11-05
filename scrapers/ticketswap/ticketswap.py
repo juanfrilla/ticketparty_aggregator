@@ -692,6 +692,11 @@ class TicketSwapScraper:
                     continue
                 if node.get("country", {}).get("slug") != "spain":
                     continue
+                if node.get("category") != "CONCERTS":
+                    continue
+                name = node.get("name")
+                if artist not in name.lower():
+                    continue
                 event_url = node.get("uri", {}).get("url")
                 event_path = node.get("uri", {}).get("path")
                 event_name_id = event_path.replace("/concert-tickets/", "")
@@ -729,7 +734,7 @@ class TicketSwapScraper:
                     scraped_data.append(
                         {
                             "id": event_id,
-                            "name": node.get("name"),
+                            "name": name,
                             "artists": [artist.title()],
                             "start_date": start_date,
                             "end_date": node.get("endDate"),
