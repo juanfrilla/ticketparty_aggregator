@@ -1,9 +1,11 @@
 import json
 import re
+from datetime import UTC, datetime
 
 import httpcloak
 
 from constants import ARTISTS
+from utils import parse_date
 
 
 class TechnoBeatsClubScraper:
@@ -60,6 +62,7 @@ class TechnoBeatsClubScraper:
 
     def scrape(self):
         scraped_data = []
+        now = datetime.now(UTC).replace(tzinfo=None)
         for artist in ARTISTS:
             print(f"Scraping {artist}")
             artist = artist.replace(" ", "-")
@@ -73,17 +76,34 @@ class TechnoBeatsClubScraper:
                     events = self.retrieve_events(important_data)
                     for event in events:
                         slug = event.get("slug")
-                        scraped_data.append(
-                            {
-                                "name": event.get("name"),
-                                "artist": artist,
-                                "start_date": event.get("starts_at_utc"),
-                                "end_date": event.get("ends_at_utc"),
-                                "club": event.get("venue_name_override"),
-                                "city_name": event.get("city_name"),
-                                "event_url": f"https://technobeatscloud.com/agenda/evento/{slug}",
-                                "image_url": event.get("computed_flyer_url"),
-                                "origin": "https://technobeatscloud.com",
-                            }
+
+                        event_id = event.get("id")
+
+                        existing_event = next(
+                            (item for item in scraped_data if item["id"] == event_id),
+                            None,
                         )
+                        start_date = event.get("starts_at_utc")
+                        if parse_date(start_date) < now:
+                            continue
+                        if existing_event:
+                            continue
+                        else:
+                            scraped_data.append(
+                                {
+                                    "id": event.get("id"),
+                                    "name": event.get("name"),
+                                    "artists": [
+                                        hl.get("name")
+                                        for hl in event.get("headliners", [])
+                                    ],
+                                    "start_date": start_date,
+                                    "end_date": event.get("ends_at_utc"),
+                                    "club": event.get("venue_name_override"),
+                                    "city_name": event.get("city_name"),
+                                    "event_url": f"https://technobeatscloud.com/agenda/evento/{slug}",
+                                    "image_url": event.get("computed_flyer_url"),
+                                    "origin": "https://technobeatscloud.com",
+                                }
+                            )
         return scraped_data

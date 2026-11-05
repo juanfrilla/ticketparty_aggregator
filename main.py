@@ -1,7 +1,6 @@
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
 
 import streamlit as st
 from dateutil.parser import isoparse
@@ -18,6 +17,7 @@ from scrapers.ticketswap.ticketswap import TicketSwapScraper
 # --- IMPORTA TU SCRAPER AQUÍ ---
 from utils import (
     last_scraped_today,
+    parse_date,
     read_json,
     save_json,
     update_last_scraped,
@@ -26,13 +26,9 @@ from utils import (
 load_dotenv()
 
 # Configuración inicial de la página de Streamlit
-st.set_page_config(page_title="TicketParty Aggregator", page_icon="🎉", layout="wide")
-
-
-def parse_date(date_str):
-    dt = datetime.fromisoformat(date_str)
-    # Forzamos siempre la conversión a UTC y eliminamos el tzinfo de forma incondicional
-    return dt.astimezone(UTC).replace(tzinfo=None)
+st.set_page_config(
+    page_title="Fiestas Remember en España", page_icon="🎉", layout="wide"
+)
 
 
 def run_single_scraper(ScraperClass):
@@ -118,20 +114,31 @@ with st.spinner("Buscando eventos y fiestas..."):
         if selected_city == "All" or e.get("city_name") == selected_city
     ]
 
+    artists = sorted(
+        {artist for event in events_after_city for artist in event.get("artists", [])}
+    )
+    selected_artist = st.sidebar.selectbox("Artista", ["All"] + artists)
+
+    events_after_artist = [
+        e
+        for e in events_after_city
+        if selected_artist == "All" or selected_artist in e.get("artists")
+    ]
+
     clubs = sorted(
         list({ev.get("club", "N/A") for ev in events_after_city if ev.get("club")})
     )
     selected_club = st.sidebar.selectbox("Club / Local", ["All"] + clubs)
 
-    now = datetime.now(UTC).replace(tzinfo=None)
     filtered_events = [
         e
-        for e in events_after_city
+        for e in events_after_artist
         if (selected_club == "All" or e.get("club") == selected_club)
-        and parse_date(e["start_date"]) > now
     ]
     # --- TÍTULO PRINCIPAL ---
-    st.title(f"🎉 TicketParty Aggregator ({len(filtered_events)} eventos encontrados)")
+    st.title(
+        f"🎉 Fiestas Remember en España ({len(filtered_events)} eventos encontrados)"
+    )
 
     # Botón manual para forzar recarga de datos limpiando caché
     if st.sidebar.button("🔄 Forzar nuevo Scraping"):
@@ -158,7 +165,7 @@ with st.spinner("Buscando eventos y fiestas..."):
 
         with st.container(border=True):
             nombre_evento = event.get("name", "Evento sin nombre")
-            artista = event.get("artist", "Evento sin nombre")
+            artistas = event.get("artists", "Evento sin nombre")
             st.subheader(nombre_evento)
 
             image_url = event.get("image_url")
@@ -171,7 +178,7 @@ with st.spinner("Buscando eventos y fiestas..."):
 
             # Información detallada adaptada a los campos de tu scrape()
             with col_info:
-                st.write(f"🎧 ** Artista:** {artista}")
+                st.write(f"🎧 **Artistas:** {', '.join(artistas)}")
                 st.write(
                     f"📍 **Club:** {event.get('club', 'N/A')} ({event.get('city_name', 'N/A')})"
                 )

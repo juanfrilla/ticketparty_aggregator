@@ -16,8 +16,8 @@ https://es.ra.co/dj/djmarta/tour-dates
 
 ordenar por fecha y hora
 
-Eventos antiguos, descartar
+filtrar por discotecas, por artistas, por provincia
 
-Sacar djs que pinchan en eventos, clasificar por djs
-No duplicar Eventos
-Detectar que es el mismo evento y quizás poner dos webs que venden entradas
+Sacar djs que pinchan en eventos, clasificar por djs, meter external ids
+Detectar que es el mismo evento y quizás poner dos webs que venden entradas, 
+poner logger

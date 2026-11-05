@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import date
+from datetime import UTC, date, datetime
 
 from constants import LAST_SCRAPED_FILE
 
@@ -64,3 +64,9 @@ def update_last_scraped() -> None:
 
 def normalize_string(s: str) -> str:
     return s.title().strip()
+
+
+def parse_date(date_str):
+    dt = datetime.fromisoformat(date_str)
+    # Forzamos siempre la conversión a UTC y eliminamos el tzinfo de forma incondicional
+    return dt.astimezone(UTC).replace(tzinfo=None)

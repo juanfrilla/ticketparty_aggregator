@@ -8,13 +8,14 @@ import re
 import time
 import uuid
 import zlib
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpcloak
 from bs4 import BeautifulSoup
 
 from constants import ARTISTS, CANON_FILE
-from utils import read_json, save_json
+from utils import parse_date, read_json, save_json
 
 from .capture import capture_order
 
@@ -641,6 +642,7 @@ class TicketSwapScraper:
         # con el lote de GraphQL como siempre.
         device_id = str(uuid.uuid4())
         resp = self.first_request()
+        now = datetime.now(UTC).replace(tzinfo=None)
         try:
             stds = self.retrieve_stds(resp.text)
         except AttributeError:
@@ -711,17 +713,31 @@ class TicketSwapScraper:
                 if not image_url:
                     image_url = None
 
-                scraped_data.append(
-                    {
-                        "name": node.get("name"),
-                        "artist": artist,
-                        "start_date": node.get("startDate"),
-                        "end_date": node.get("endDate"),
-                        "club": node.get("locationName"),
-                        "city_name": node.get("cityName"),
-                        "event_url": event_url,
-                        "image_url": image_url,
-                        "origin": "www.ticketswap.com",
-                    }
+                event_id = node.get("id")
+
+                existing_event = next(
+                    (item for item in scraped_data if item["id"] == event_id), None
                 )
+                start_date = node.get("startDate")
+                if parse_date(start_date) < now:
+                    continue
+
+                if existing_event:
+                    if artist not in existing_event["artists"]:
+                        existing_event["artists"].append(artist.title())
+                else:
+                    scraped_data.append(
+                        {
+                            "id": event_id,
+                            "name": node.get("name"),
+                            "artists": [artist.title()],
+                            "start_date": start_date,
+                            "end_date": node.get("endDate"),
+                            "club": node.get("locationName"),
+                            "city_name": node.get("cityName"),
+                            "event_url": event_url,
+                            "image_url": image_url,
+                            "origin": "www.ticketswap.com",
+                        }
+                    )
         return scraped_data

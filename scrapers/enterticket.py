@@ -1,6 +1,9 @@
+from datetime import UTC, datetime
+
 import httpcloak
 
 from constants import ARTISTS
+from utils import parse_date
 
 
 class EnterTicketScraper:
@@ -48,6 +51,7 @@ class EnterTicketScraper:
 
     def scrape(self):
         scraped_data = []
+        now = datetime.now(UTC).replace(tzinfo=None)
         for artist in ARTISTS:
             print(f"Scraping {artist}")
             search_resp = self.search_artist_request(artist)
@@ -72,17 +76,38 @@ class EnterTicketScraper:
                         venue = event.get("venue", {})
                         header_image = event.get("header_image")
                         slug = event.get("slug")
-                        scraped_data.append(
-                            {
-                                "name": event.get("name"),
-                                "artist": artist,
-                                "start_date": event.get("start_date", {}).get("date"),
-                                "end_date": event.get("end_date", {}).get("date"),
-                                "club": venue.get("name"),
-                                "city_name": venue.get("address", {}).get("province"),
-                                "event_url": f"https://www.enterticket.es/eventos/{slug}",
-                                "image_url": f"https://d31tcnbxvxtafg.cloudfront.net/images/events/{header_image}",
-                                "origin": "https://www.enterticket.es/",
-                            }
+
+                        event_id = event.get("id")
+
+                        existing_event = next(
+                            (item for item in scraped_data if item["id"] == event_id),
+                            None,
                         )
+
+                        start_date = event.get("start_date", {}).get("date")
+                        if parse_date(start_date) < now:
+                            continue
+
+                        if existing_event:
+                            continue
+                        else:
+                            scraped_data.append(
+                                {
+                                    "id": event.get("id"),
+                                    "name": event.get("name"),
+                                    "artists": [
+                                        hl.get("name")
+                                        for hl in event.get("artists", [])
+                                    ],
+                                    "start_date": start_date,
+                                    "end_date": event.get("end_date", {}).get("date"),
+                                    "club": venue.get("name"),
+                                    "city_name": venue.get("address", {}).get(
+                                        "province"
+                                    ),
+                                    "event_url": f"https://www.enterticket.es/eventos/{slug}",
+                                    "image_url": f"https://d31tcnbxvxtafg.cloudfront.net/images/events/{header_image}",
+                                    "origin": "https://www.enterticket.es/",
+                                }
+                            )
         return scraped_data
