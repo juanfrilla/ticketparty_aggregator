@@ -140,11 +140,6 @@ with st.spinner("Buscando eventos y fiestas..."):
         f"🎉 Fiestas Remember en España ({len(filtered_events)} eventos encontrados)"
     )
 
-    # Botón manual para forzar recarga de datos limpiando caché
-    if st.sidebar.button("🔄 Forzar nuevo Scraping"):
-        st.cache_data.clear()
-        st.rerun()
-
     # --- PINTAR TARJETAS DE EVENTOS ---
     if not filtered_events:
         st.info("No hay eventos que coincidan con los filtros seleccionados.")
